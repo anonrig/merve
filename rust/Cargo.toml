@@ -31,6 +31,6 @@ std = []
 rustdoc-args = ["--cfg", "docsrs"]
 
 [build-dependencies]
-cc = { version = "1.1", features = ["parallel"] }
+cc = { version = "1.2", features = ["parallel"] }
 link_args = "0.6"
 regex = { version = "1.11", features = [] }
