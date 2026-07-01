@@ -107,7 +107,7 @@ jobs:
     name: ${{ matrix.os }} ${{ matrix.cxx || 'MSVC' }}${{ matrix.name_suffix || '' }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
 
       - name: Setup Ninja (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
@@ -164,7 +164,7 @@ jobs:
     name: Rust ${{ matrix.toolchain }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
