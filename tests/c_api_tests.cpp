@@ -482,3 +482,39 @@ TEST(c_api_tests, spread_reexports) {
   ASSERT_TRUE(merve_string_eq(merve_get_reexport_name(result, 1), "dep2"));
   merve_free(result);
 }
+
+// The scan loops previously tested-then-incremented (`pos++ < end`), reading
+// one byte past the input on their final iteration. A NUL-terminated literal
+// hides that; an exact-sized heap buffer puts the byte past `length` in an
+// ASan redzone, and a hostile byte planted there changes the parse result.
+TEST(c_api_tests, does_not_read_past_the_declared_length) {
+  const char* src = "module.exports = require('./implementation');\n";
+  size_t len = std::strlen(src);
+
+  // Exact-sized allocation: no sentinel. Under ASan the old loops fault here.
+  {
+    char* buf = new char[len];
+    std::memcpy(buf, src, len);
+    merve_error_loc err;
+    merve_analysis result = merve_parse_commonjs(buf, len, &err);
+    ASSERT_NE(result, nullptr);
+    EXPECT_TRUE(merve_is_valid(result));
+    EXPECT_EQ(merve_get_reexports_count(result), 1u);
+    merve_free(result);
+    delete[] buf;
+  }
+
+  // A '(' immediately past the declared length: the same allocation, so the
+  // read is deterministic rather than a heap lottery. The old loops consumed
+  // it and failed the parse with a paren error located one past the end.
+  {
+    std::string planted(src);
+    planted.push_back('(');
+    merve_error_loc err;
+    merve_analysis result = merve_parse_commonjs(planted.data(), len, &err);
+    ASSERT_NE(result, nullptr);
+    EXPECT_TRUE(merve_is_valid(result));
+    EXPECT_EQ(merve_get_reexports_count(result), 1u);
+    merve_free(result);
+  }
+}

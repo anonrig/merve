@@ -740,4 +740,19 @@ mod tests {
         assert_send::<Analysis<'_>>();
         assert_sync::<Analysis<'_>>();
     }
+
+    /// A `&str` is not NUL-terminated, so the byte past its end belongs to
+    /// whatever neighbors the allocation. The scan loops used to read it,
+    /// making every parse depend on adjacent heap contents; slicing a longer
+    /// buffer plants that byte deterministically instead of leaving it to
+    /// the allocator.
+    #[test]
+    fn does_not_read_past_the_input() {
+        let src = "module.exports = require('./implementation');\n";
+        let planted = format!("{src}(");
+        let analysis =
+            parse_commonjs(&planted[..src.len()]).expect("a byte past the input must not fail the parse");
+        let reexports: Vec<_> = analysis.reexports().map(|r| r.name.to_owned()).collect();
+        assert_eq!(reexports, ["./implementation"]);
+    }
 }

@@ -552,7 +552,7 @@ private:
   }
 
   void lineComment() {
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
       if (ch == '\n' || ch == '\r') {
         countNewline(ch);
@@ -563,9 +563,9 @@ private:
 
   void blockComment() {
     pos++;
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
-      if (ch == '*' && *(pos + 1) == '/') {
+      if (ch == '*' && pos + 1 < end && *(pos + 1) == '/') {
         pos++;
         return;
       }
@@ -574,7 +574,7 @@ private:
   }
 
   void stringLiteral(char quote) {
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
       if (ch == quote)
         return;
@@ -583,7 +583,7 @@ private:
         ch = *++pos;
         if (ch == '\r') {
           ++line;
-          if (*(pos + 1) == '\n')
+          if (pos + 1 < end && *(pos + 1) == '\n')
             pos++;
         } else if (ch == '\n') {
           ++line;
@@ -595,7 +595,7 @@ private:
   }
 
   void regularExpression() {
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
       if (ch == '/')
         return;
@@ -611,7 +611,7 @@ private:
   }
 
   void regexCharacterClass() {
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
       if (ch == ']')
         return;
@@ -625,9 +625,9 @@ private:
   }
 
   void templateString() {
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = *pos;
-      if (ch == '$' && *(pos + 1) == '{') {
+      if (ch == '$' && pos + 1 < end && *(pos + 1) == '{') {
         pos++;
         if (templateStackDepth >= STACK_DEPTH) {
           syntaxError(lexer_error::TEMPLATE_NEST_OVERFLOW);
@@ -805,7 +805,7 @@ private:
 
   void tryParseLiteralExports() {
     const char* revertPos = pos - 1;
-    while (pos++ < end) {
+    while (++pos < end) {
       char ch = commentWhitespace();
       const char* startPos = pos;
       if (identifier(ch)) {
@@ -1146,7 +1146,7 @@ private:
           if (ch != '{') break;
           pos++;
           ch = commentWhitespace();
-          if (ch != 'i' || *(pos + 1) != 'f') break;
+          if (ch != 'i' || pos + 1 >= end || *(pos + 1) != 'f') break;
           pos += 2;
           ch = commentWhitespace();
           if (ch != '(') break;
@@ -1168,7 +1168,7 @@ private:
             if (ch != quot) break;
             pos++;
             ch = commentWhitespace();
-            if (ch != '|' || *(pos + 1) != '|') break;
+            if (ch != '|' || pos + 1 >= end || *(pos + 1) != '|') break;
             pos += 2;
             ch = commentWhitespace();
             if (!matchesAt(pos, end, it_id)) break;
@@ -1195,7 +1195,7 @@ private:
               pos++;
             ch = commentWhitespace();
 
-            if (ch == 'i' && *(pos + 1) == 'f') {
+            if (ch == 'i' && pos + 1 < end && *(pos + 1) == 'f') {
               bool inIf = true;
               pos += 2;
               ch = commentWhitespace();
@@ -1214,7 +1214,7 @@ private:
                 if (ch == ';')
                   pos++;
                 ch = commentWhitespace();
-                if (ch == 'i' && *(pos + 1) == 'f') {
+                if (ch == 'i' && pos + 1 < end && *(pos + 1) == 'f') {
                   pos += 2;
                   ch = commentWhitespace();
                   if (ch != '(') break;
@@ -1235,7 +1235,7 @@ private:
                 ch = commentWhitespace();
                 if (!readExportsOrModuleDotExports(ch)) break;
                 ch = commentWhitespace();
-                if (ch != '&' || *(pos + 1) != '&') break;
+                if (ch != '&' || pos + 1 >= end || *(pos + 1) != '&') break;
                 pos += 2;
                 ch = commentWhitespace();
                 if (!readExportsOrModuleDotExports(ch)) break;
@@ -1288,7 +1288,7 @@ private:
             pos++;
             ch = commentWhitespace();
             if (ch == '&') {
-              if (*(pos + 1) != '&') break;
+              if (pos + 1 >= end || *(pos + 1) != '&') break;
               pos += 2;
               ch = commentWhitespace();
               if (ch != '!') break;
@@ -1609,7 +1609,7 @@ public:
       lastTokenPos = pos;  // Update lastTokenPos after shebang
     }
 
-    while (pos++ < end) {
+    while (++pos < end) {
       ch = *pos;
 
       if (ch == ' ' || (ch < 14 && ch > 8)) {
@@ -1649,7 +1649,7 @@ public:
               if (*pos == '(') {
                 openTokenTypeStack_[openTokenDepth] = '(';
                 openTokenPosStack_[openTokenDepth++] = lastTokenPos;
-                if (*(pos + 1) == 'r') {
+                if (pos + 1 < end && *(pos + 1) == 'r') {
                   pos++;
                   tryParseRequire(RequireType::ExportStar);
                 }
